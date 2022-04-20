@@ -24,7 +24,11 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -51,11 +55,11 @@ import org.apache.axis2.transport.TransportUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHeaders;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.api.ApiConstants;
-import org.apache.synapse.api.inbound.InboundApiHandler;
 import org.apache.synapse.api.inbound.InboundApiHandler;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.MessageContextCreatorForAxis2;
@@ -83,7 +87,7 @@ import static org.wso2.carbon.inbound.endpoint.common.Constants.TENANT_DOMAIN;
 
 public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter {
 
-    private static Log log = LogFactory.getLog(InboundWebsocketSourceHandler.class);
+    private static final Log log = LogFactory.getLog(InboundWebsocketSourceHandler.class);
 
     private InboundWebsocketChannelContext wrappedContext;
     private WebSocketServerHandshaker handshaker;
@@ -102,6 +106,7 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
     private ArrayList<AbstractSubprotocolHandler> subprotocolHandlers;
     private String defaultContentType;
     private int portOffset;
+    private boolean isHealthCheckCall = false;
 
     private InboundApiHandler inboundApiHandler = new InboundApiHandler();
     private static final AttributeKey<Map<String, Object>> WSO2_PROPERTIES = AttributeKey.valueOf("WSO2_PROPERTIES");
@@ -148,9 +153,13 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        if (isHealthCheckCall) {
+            return;
+        }
         String endpointName = WebsocketEndpointManager.getInstance().getEndpointName(port, tenantDomain);
         if (endpointName == null) {
-            handleException("Endpoint not found for port : " + port + "" + " tenant domain : " + tenantDomain);
+            int portWithOffset = port + portOffset;
+            handleException("Endpoint not found for port : " + portWithOffset + "" + " tenant domain : " + tenantDomain);
         }
         WebsocketSubscriberPathManager.getInstance()
                 .addChannelContext(endpointName, subscriberPath.getPath(), wrappedContext);
@@ -167,6 +176,14 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
     private void handleHandshake(ChannelHandlerContext ctx, FullHttpRequest req) throws URISyntaxException, AxisFault {
         if (log.isDebugEnabled()) {
             WebsocketLogUtil.printHeaders(log, req, ctx);
+        }
+        // This block is for the health check of the ws ports
+        if (!req.headers().contains(HttpHeaders.UPGRADE) && req.uri().equals("/health")) {
+            isHealthCheckCall = true;
+            FullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+            httpResponse.headers().set("content-length", httpResponse.content().readableBytes());
+            ctx.writeAndFlush(httpResponse);
+            return;
         }
         WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
                 getWebSocketLocation(req), SubprotocolBuilderUtil.buildSubprotocolString(contentTypes, otherSubprotocols), true);
@@ -196,7 +213,8 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
 
         String endpointName = WebsocketEndpointManager.getInstance().getEndpointName(port, tenantDomain);
         if (endpointName == null) {
-            handleException("Endpoint not found for port : " + port + "" + " tenant domain : " + tenantDomain);
+            int portWithOffset = port + portOffset;
+            handleException("Endpoint not found for port : " + portWithOffset + "" + " tenant domain : " + tenantDomain);
         }
 
         WebsocketSubscriberPathManager.getInstance()
@@ -374,7 +392,6 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
                     synCtx.setEnvelope(TransportUtils.createSOAPEnvelope(documentElement));
                     injectForMediation(synCtx, endpoint);
                 } else if (frame instanceof PingWebSocketFrame) {
-                    ctx.channel().writeAndFlush(new PongWebSocketFrame(frame.content().retain()));
                     PongWebSocketFrame pongWebSocketFrame = new PongWebSocketFrame(frame.content().retain());
                     ctx.channel().writeAndFlush(pongWebSocketFrame);
                     if (log.isDebugEnabled()) {
@@ -444,6 +461,10 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
         return wrappedContext;
     }
 
+    public URI getSubscriber() {
+        return subscriberPath;
+    }
+
     public String getSubscriberPath() {
         return subscriberPath.getPath();
     }
@@ -509,6 +530,11 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
         ((Axis2MessageContext) synCtx).getAxis2MessageContext()
                 .setProperty(InboundWebsocketConstants.WEBSOCKET_SOURCE_HANDLER_CONTEXT,
                              wrappedContext.getChannelHandlerContext());
+        synCtx.setProperty(InboundWebsocketConstants.WEBSOCKET_SOURCE_CHANNEL_IDENTIFIER,
+                wrappedContext.getChannelIdentifier());
+        ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .setProperty(InboundWebsocketConstants.WEBSOCKET_SOURCE_CHANNEL_IDENTIFIER,
+                        wrappedContext.getChannelIdentifier());
         if (outflowDispatchSequence != null) {
             synCtx.setProperty(InboundWebsocketConstants.WEBSOCKET_OUTFLOW_DISPATCH_SEQUENCE, outflowDispatchSequence);
             ((Axis2MessageContext) synCtx).getAxis2MessageContext()

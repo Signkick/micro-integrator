@@ -24,16 +24,18 @@ import org.apache.axis2.AxisFault;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.rest.RESTConstants;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.ops4j.pax.logging.PaxLoggingConstants;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.wso2.micro.core.util.AuditLogger;
-import org.wso2.micro.core.util.StringUtils;
+import org.wso2.micro.integrator.initializer.dashboard.ArtifactUpdateListener;
 import org.wso2.micro.integrator.initializer.utils.ConfigurationHolder;
 import org.wso2.micro.integrator.security.MicroIntegratorSecurityUtils;
 import org.wso2.micro.integrator.security.user.api.RealmConfiguration;
@@ -49,6 +51,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -119,13 +123,21 @@ public class Utils {
             axis2MessageContext.setProperty(Constants.HTTP_STATUS_CODE, Constants.INTERNAL_SERVER_ERROR);
             LOG.error("Error occurred while setting json payload", axisFault);
         }
-        axis2MessageContext.setProperty("messageType", Constants.HEADER_VALUE_APPLICATION_JSON);
+
+        if (axis2MessageContext.getConfigurationContext().getAxisConfiguration().
+                getMessageFormatter(Constants.MANAGEMENT_APPLICATION_JSON) != null) {
+            axis2MessageContext.setProperty("messageType", Constants.MANAGEMENT_APPLICATION_JSON);
+        } else {
+            axis2MessageContext.setProperty("messageType", Constants.HEADER_VALUE_APPLICATION_JSON);
+        }
+
         axis2MessageContext.setProperty("ContentType", Constants.HEADER_VALUE_APPLICATION_JSON);
         axis2MessageContext.removeProperty(Constants.NO_ENTITY_BODY);
     }
 
-    static JSONObject handleTracing(String performedBy, String type, JSONObject info, AspectConfiguration config,
-                                    String artifactName, org.apache.axis2.context.MessageContext axisMsgCtx) {
+    static JSONObject handleTracing(String performedBy, String type, String artifactType, JSONObject info,
+                                    AspectConfiguration config, String artifactName,
+                                    org.apache.axis2.context.MessageContext axisMsgCtx) {
 
         JSONObject payload = new JSONObject(JsonUtil.jsonPayloadToString(axisMsgCtx));
         JSONObject response = new JSONObject();
@@ -137,11 +149,13 @@ public class Utils {
                 msg = "Enabled tracing for ('" + artifactName + "')";
                 response.put(Constants.MESSAGE, msg);
                 AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_ENABLE, info);
+                ArtifactUpdateListener.addToUpdatedArtifactsQueue(artifactType, artifactName);
             } else if (Constants.DISABLE.equalsIgnoreCase(traceState)) {
                 config.disableTracing();
                 msg = "Disabled tracing for ('" + artifactName + "')";
                 response.put(Constants.MESSAGE, msg);
                 AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_DISABLED, info);
+                ArtifactUpdateListener.addToUpdatedArtifactsQueue(artifactType, artifactName);
             } else {
                 msg = "Invalid value for state " + Constants.TRACE;
                 response = createJsonError(msg, axisMsgCtx, Constants.BAD_REQUEST);
@@ -267,7 +281,24 @@ public class Utils {
         ConfigurationAdmin configurationAdmin = ConfigurationHolder.getInstance().getConfigAdminService();
         Configuration configuration =
                 configurationAdmin.getConfiguration(Constants.PAX_LOGGING_CONFIGURATION_PID, "?");
-        configuration.update();
+        Dictionary properties = new Hashtable<>();
+        properties.put(Constants.SERVICE_PID, PaxLoggingConstants.LOGGING_CONFIGURATION_PID);
+        Hashtable paxLoggingProperties = getPaxLoggingProperties();
+        paxLoggingProperties.forEach(properties::put);
+        configuration.update(properties);
+    }
+
+    private static Hashtable getPaxLoggingProperties() throws IOException {
+        String paxPropertiesFileLocation = System.getProperty("org.ops4j.pax.logging.property.file");
+        if (StringUtils.isNotEmpty(paxPropertiesFileLocation)) {
+            File file = new File(paxPropertiesFileLocation);
+            if (file.exists()) {
+                Properties properties = new Properties();
+                properties.load(new FileInputStream(file));
+                return properties;
+            }
+        }
+        return new Hashtable();
     }
 
     /**
