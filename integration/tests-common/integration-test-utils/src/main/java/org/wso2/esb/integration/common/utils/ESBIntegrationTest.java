@@ -114,7 +114,6 @@ public abstract class ESBIntegrationTest {
     protected int portOffset;
     protected final int DEFAULT_TIMEOUT = 60;
     protected boolean isManagementApiAvailable = false;
-
     private final String SERVER_DEPLOYMENT_DIR =
             System.getProperty(ESBTestConstant.CARBON_HOME) + File.separator + "repository" + File.separator
             + "deployment" + File.separator + "server" + File.separator + "synapse-configs" + File.separator
@@ -138,6 +137,7 @@ public abstract class ESBIntegrationTest {
         esbUtils = new ESBTestCaseUtils();
         tenantInfo = context.getContextTenant();
         userInfo = tenantInfo.getContextUser();
+        hostName = UrlGenerationUtil.getManagerHost(context.getInstance());
     }
 
     protected void init(TestUserMode userMode) throws Exception {
@@ -182,7 +182,15 @@ public abstract class ESBIntegrationTest {
     }
 
     protected String getMainSequenceURL() {
+        return getMainSequenceURL(false);
+    }
+
+    protected String getMainSequenceURL(boolean https) {
+
         String mainSequenceUrl = contextUrls.getServiceUrl();
+        if (https) {
+            mainSequenceUrl = contextUrls.getSecureServiceUrl();
+        }
         if (mainSequenceUrl.endsWith("/services")) {
             mainSequenceUrl = mainSequenceUrl.replace("/services", "");
         }
@@ -190,7 +198,6 @@ public abstract class ESBIntegrationTest {
             mainSequenceUrl = mainSequenceUrl + "/";
         }
         return mainSequenceUrl;
-
     }
 
     protected String getProxyServiceURLHttp(String proxyServiceName) {
@@ -199,6 +206,10 @@ public abstract class ESBIntegrationTest {
 
     protected String getApiInvocationURL(String apiName) {
         return getMainSequenceURL() + apiName;
+    }
+
+    protected String getApiInvocationURLHttps(String apiName) {
+        return getMainSequenceURL(true) + apiName;
     }
 
     protected String getProxyServiceURLHttps(String proxyServiceName) {
@@ -1208,4 +1219,6 @@ public abstract class ESBIntegrationTest {
     protected void deployProxyService(String name, String resourcePath) throws IOException {
         copyArtifactToDeploymentDirectory(resourcePath, name, PROXY_DIRECTORY);
     }
+
 }
+

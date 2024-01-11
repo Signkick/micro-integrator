@@ -28,6 +28,7 @@ import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.integrator.management.apis.ManagementApiUndefinedException;
 import org.wso2.micro.integrator.security.MicroIntegratorSecurityUtils;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;
+import org.wso2.micro.integrator.security.user.core.file.FileBasedUserStoreManager;
 
 import java.io.IOException;
 import java.util.Map;
@@ -147,8 +148,10 @@ public abstract class AuthenticationHandlerAdapter extends SecurityHandlerAdapte
     private String[] extractDetails(String token) {
 
         String decodedCredentials = new String(new Base64().decode(token.getBytes()));
-        String[] usernamePasswordArray = decodedCredentials.split(":");
-        if (usernamePasswordArray.length != 2) {
+        // everything before the first colon can be considered as the username
+        // since RFC-2617 specifies that username cannot contain a colon.
+        String[] usernamePasswordArray = decodedCredentials.split(":",2);
+        if (usernamePasswordArray.length < 2) {
             return new String[] {};
         }
         return new String[] { usernamePasswordArray[0], usernamePasswordArray[1] };

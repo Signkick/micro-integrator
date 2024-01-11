@@ -58,6 +58,7 @@
             <class name="org.wso2.carbon.esb.passthru.transport.test.ESBJAVA5135ResponseBodyWith202TestCase"/>
             <class name="org.wso2.carbon.esb.passthru.transport.test.HTTPDeleteTestCases"/>
             <class name="org.wso2.carbon.esb.passthru.transport.test.MTOMMIMEBoundaryWhenContentTypePreservedTestCase"/>
+            <class name="org.wso2.carbon.esb.passthru.transport.test.MultipartFormDataWithCharacterEncodingPropertyTestCase"/>
             <class name="org.wso2.carbon.esb.passthru.transport.test.CookieHeaderExpiresHavingCommaTestCase"/>
             <class name="org.wso2.carbon.esb.passthru.transport.test.SetPropertyMessageBuilderInvokedWithEmptyContentTypeTestCase"/>
             <class name="org.wso2.carbon.esb.passthru.transport.test.LocationHeaderWithRelativeURLPathTestCase"/>
@@ -87,6 +88,7 @@
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSClientAndRestServiceTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSEndpointSuspensionTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSEndpointTestCase"/>
+            <class name="org.wso2.carbon.esb.jms.transport.test.JMSBlockingCallWithToHeaderTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSMapMessageTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSMessageProcessorTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSMessageStoreProcRESTTestCase"/>
@@ -97,6 +99,7 @@
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSTransportProxyTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.JMSMessageStoreUnavailableTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.SpecialCharacterTestCase"/>
+            <class name="org.wso2.carbon.esb.jms.transport.test.JMSServerReconnectionTestCase"/>
             <class name="org.wso2.carbon.esb.jms.transport.test.topic.JMSTopicAsProxyEndpointTestCase"/>
         </classes>
     </test>
@@ -176,15 +179,15 @@
         </packages>
     </test-->
 
-    <test name="MailTo-transport-Test-Receiver" preserve-order="true" verbose="2">
-        <packages>
-            <package name="org.wso2.carbon.esb.mailto.transport.receiver.test"/>
-        </packages>
-    </test>
-
     <test name="MailTo-transport-Test-Sender" preserve-order="true" verbose="2">
         <packages>
             <package name="org.wso2.carbon.esb.mailto.transport.sender.test"/>
+        </packages>
+    </test>
+
+    <test name="MailTo-transport-Test-Receiver" preserve-order="true" verbose="2">
+        <packages>
+            <package name="org.wso2.carbon.esb.mailto.transport.receiver.test"/>
         </packages>
     </test>
 

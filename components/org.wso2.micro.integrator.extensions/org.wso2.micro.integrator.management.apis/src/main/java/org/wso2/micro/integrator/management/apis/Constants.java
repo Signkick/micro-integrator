@@ -31,6 +31,10 @@ public class Constants {
     public static final String PREFIX_ENDPOINTS = "/endpoints";
     public static final String PREFIX_INBOUND_ENDPOINTS = "/inbound-endpoints";
     public static final String PREFIX_PROXY_SERVICES = "/proxy-services";
+    public static final String PREFIX_REGISTRY_RESOURCES = "/registry-resources";
+    public static final String PREFIX_REGISTRY_CONTENT = "/registry-resources/content";
+    public static final String PREFIX_REGISTRY_METADATA = "/registry-resources/metadata";
+    public static final String PREFIX_REGISTRY_PROPERTIES = "/registry-resources/properties";
     public static final String PREFIX_TASKS = "/tasks";
     public static final String PREFIX_SEQUENCES = "/sequences";
     public static final String PREFIX_LOGGING = "/logging";
@@ -54,6 +58,7 @@ public class Constants {
     public static final String PATH_PARAM_ROLE = "/" + "{role}";
     public static final String PATH_PARAM_TRANSACTION = "/" + "{param}";
     public static final String ROOT_CONTEXT = "/";
+    public static final String PREFIX_CONFIGS = "/configs";
 
     public static final String COUNT = "count";
     public static final String TOTAL_COUNT = "totalCount";
@@ -124,7 +129,11 @@ public class Constants {
     public static final String ROLES = "roles";
     public static final String ROLE = "role";
     public static final String PASSWORD = "password";
+    public static final String NEW_PASSWORD = "newPassword";
+    public static final String CONFIRM_PASSWORD = "confirmPassword";
+    public static final String OLD_PASSWORD = "oldPassword";
     public static final String IS_ADMIN = "isAdmin";
+    public static final String ADMIN = "admin";
     public static final String PATTERN = "pattern";
     public static final String PASSWORD_MASKED_VALUE = "*****";
 
@@ -162,14 +171,29 @@ public class Constants {
     public static final String AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_TRACE = "sequence_template_trace";
     public static final String AUDIT_LOG_TYPE_SEQUENCE_TRACE = "sequence_trace";
     public static final String AUDIT_LOG_TYPE_ENDPOINT_TRACE = "endpoint_trace";
+    public static final String AUDIT_LOG_TYPE_REGISTRY_RESOURCE = "registry_resource";
+    public static final String AUDIT_LOG_TYPE_REGISTRY_RESOURCE_PROPERTIES = "registry_resource_properties";
 
     public static final String PROXY_SERVICES = "proxy-services";
+    public static final String NODES = "nodes";
     public static final String APIS = "apis";
     public static final String INBOUND_ENDPOINTS = "inbound-endpoints";
     public static final String SEQUENCE_TEMPLATE = "templates_sequence";
     public static final String SEQUENCES = "sequences";
     public static final String ENDPOINTS = "endpoints";
-
+    public static final String CARBON_APPLICATIONS = "carbonapps";
+    public static final String DATA_SERVICES = "data-services";
+    public static final String DATA_SOURCES = "data-sources";
+    public static final String LOCAL_ENTRIES = "local-entries";
+    public static final String LOG_FILES = "logs";
+    public static final String LOGGING_RESOURCES = "log-configs";
+    public static final String CONNECTORS = "connectors";
+    public static final String MESSAGE_PROCESSORS = "message-processors";
+    public static final String MESSAGE_STORE = "message-stores";
+    public static final String TEMPLATES = "templates";
+    public static final String TASKS = "tasks";
+    public static final String REGISTRY_RESOURCES = "registry-resources";
+    public static final String RESOURCE_TYPE = "resourceType";
     public static final String AUDIT_LOG_ACTION_ENABLE = "enabled";
     public static final String AUDIT_LOG_ACTION_DISABLED = "disabled";
     public static final String AUDIT_LOG_ACTION_CREATED = "created";
@@ -179,7 +203,8 @@ public class Constants {
     public static final String DOMAIN_SEPARATOR;
 
     static {
-        String userDomainSeparator = CarbonServerConfigurationService.getInstance().getFirstProperty("UserDomainSeparator");
+        String userDomainSeparator = CarbonServerConfigurationService.getInstance()
+                .getFirstProperty("UserDomainSeparator");
         if (userDomainSeparator != null && !userDomainSeparator.trim().isEmpty()) {
             DOMAIN_SEPARATOR = userDomainSeparator.trim();
         } else {
@@ -187,6 +212,31 @@ public class Constants {
         }
     }
 
-
     static final String SERVICE_PID = "service.pid";
+    public static final String REGISTRY_PATH = "path";
+    public static final String REGISTRY_PATH_FOR_PROPERTY = "pathForProp";
+    public static final String EXPAND_PARAM = "expand";
+    public static final String VALUE_TRUE = "true";
+    public static final String CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
+    public static final String REGISTRY_ROOT_PATH = "registry";
+    public static final String ERROR_KEY = "error";
+    public static final String CONFIGURATION_REGISTRY_PATH = "registry/config";
+    public static final String CONFIGURATION_REGISTRY_PREFIX = "conf:";
+    public static final String GOVERNANCE_REGISTRY_PATH = "registry/governance";
+    public static final String GOVERNANCE_REGISTRY_PREFIX = "gov:";
+    public static final String LOCAL_REGISTRY_PATH = "registry/local";
+    public static final String LOCAL_REGISTRY_PREFIX = "local:";
+    public static final String DEFAULT_MEDIA_TYPE = "text/plain";
+    public static final String MEDIA_TYPE_KEY = "mediaType";
+    public static final String PROPERTY_EXTENSION = ".properties";
+    public static final String VALUE_KEY = "value";
+    public static final String REGISTRY_RESOURCE_NAME = "registryResourceName";
+    public static final String REGISTRY_PROPERTY_NAME = "propertyName";
+    public static final String FILE = "file";
+    public static final int MAXIMUM_RETRY_COUNT = 5;
+
+    // Searching constants
+    public static final String SEARCH_KEY = "searchKey";
+    public static final Character BASIC_AUTH_SEPARATOR_CHAR = ':';
+
 }

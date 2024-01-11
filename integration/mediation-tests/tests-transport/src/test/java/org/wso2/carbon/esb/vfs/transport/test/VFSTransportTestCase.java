@@ -29,6 +29,7 @@ import org.wso2.carbon.automation.engine.annotations.ExecutionEnvironment;
 import org.wso2.carbon.automation.engine.annotations.SetEnvironment;
 import org.wso2.carbon.automation.test.utils.http.client.HttpRequestUtil;
 import org.wso2.esb.integration.common.extensions.carbonserver.CarbonServerExtension;
+import org.wso2.esb.integration.common.utils.CarbonLogReader;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.common.utils.Utils;
 
@@ -39,21 +40,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import javax.ws.rs.core.MediaType;
 
 /**
  * This test class in skipped when user mode is tenant because of this release not support vfs transport for tenants
  */
 public class VFSTransportTestCase extends ESBIntegrationTest {
 
+    private CarbonLogReader carbonLogReader;
     private String pathToVfsDir;
     private File rootFolder;
     private HashMap<String, File> proxyVFSRoots = new HashMap<>();
+    private static final String PROXY_NAME_INVALID_URI = "VFSInvalidURIProxy";
+    private static final String ERROR_MSG_INVALID_URI_LOG_NOT_FOUND = "The log for invalid File URI is not printed";
+    private static String invalidUri;
+    private static String expectedLogMsgInvalidUri;
 
     @BeforeClass(alwaysRun = true)
     public void init() throws Exception {
         super.init();
         pathToVfsDir = getClass().getResource("/artifacts/ESB/synapseconfig/vfsTransport/").getPath();
 
+        invalidUri = "file://" + pathToVfsDir + "invalidDirectory";
+        expectedLogMsgInvalidUri = "Provided file uri: " + invalidUri + " is invalid. File does not exist";
         rootFolder = new File(pathToVfsDir + "test" + File.separator);
         File outFolder = new File(pathToVfsDir + "test" + File.separator + "out" + File.separator);
         File inFolder = new File(pathToVfsDir + "test" + File.separator + "in" + File.separator);
@@ -95,8 +104,12 @@ public class VFSTransportTestCase extends ESBIntegrationTest {
         addVFSProxy22();
         addVFSProxy23();
         addVFSProxy24();
+        addVFSProxy25();
+        addVFSProxy26();
+        addVFSProxy27();
 
         CarbonServerExtension.restartServer();
+        carbonLogReader = new CarbonLogReader();
     }
 
     @SetEnvironment(executionEnvironments = { ExecutionEnvironment.STANDALONE })
@@ -669,6 +682,96 @@ public class VFSTransportTestCase extends ESBIntegrationTest {
         Assert.assertFalse(outfile.exists());
     }
 
+    @SetEnvironment(executionEnvironments = { ExecutionEnvironment.STANDALONE })
+    @Test(groups = { "wso2.esb" }, description = "Test VFS Proxy with an invalid URI")
+    public void testVFSProxyInvalidURI() throws Exception {
+
+        OMElement proxy =
+                AXIOMUtil.stringToOM("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                                             + "<proxy xmlns=\"http://ws.apache.org/ns/synapse\" name=\""
+                                             + PROXY_NAME_INVALID_URI + "\" transports=\"vfs\">\n"
+                                             + "    <parameter name=\"transport.vfs.FileURI\">"
+                                             + invalidUri + "</parameter>\n"
+                                             + "    <parameter name=\"transport.vfs.ContentType\">"
+                                             + MediaType.TEXT_XML + "</parameter>\n"
+                                             + "    <parameter name=\"transport.vfs.FileNamePattern\">.*\\.xml</parameter>\n"
+                                             + "    <parameter name=\"transport.PollInterval\">5</parameter>\n"
+                                             + "    <target faultSequence=\"faultSequence\">\n"
+                                             + "        <inSequence>\n"
+                                             + "            <log level=\"full\"/>\n"
+                                             + "        </inSequence>\n"
+                                             + "        <outSequence/>\n"
+                                             + "    </target>\n"
+                                             + "</proxy>");
+        carbonLogReader.start();
+        addProxy(proxy, PROXY_NAME_INVALID_URI);
+        Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(DEFAULT_TIMEOUT, TimeUnit.SECONDS).until(
+                isProxyDeploymentSuccessful(PROXY_NAME_INVALID_URI));
+        Assert.assertTrue(carbonLogReader.checkForLog(expectedLogMsgInvalidUri, DEFAULT_TIMEOUT),
+                          ERROR_MSG_INVALID_URI_LOG_NOT_FOUND);
+        carbonLogReader.stop();
+    }
+
+    @SetEnvironment(executionEnvironments = {ExecutionEnvironment.STANDALONE})
+    @Test(groups = {"wso2.esb"}, description = "Test Last Modified timestamp is set to the local file when sending " +
+            "through VFS Transport Sender")
+    public void testVFSProxyLocalFileWithLastModified() throws Exception {
+
+        String proxyName = "VFSProxy25";
+
+        File sourceFile = new File(pathToVfsDir + File.separator + "test.xml");
+        File targetFile = new File(proxyVFSRoots.get(proxyName) + File.separator + "in" + File.separator + "test.xml");
+        File outfile = new File(proxyVFSRoots.get(proxyName) + File.separator + "out-test" + File.separator + "test" +
+                ".xml");
+
+        FileUtils.copyFile(sourceFile, targetFile);
+        Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+                .until(isFileExist(outfile));
+        Assert.assertTrue(outfile.exists());
+        Assert.assertEquals(sourceFile.lastModified(), outfile.lastModified(), "The Last Modified timestamp " +
+                "mismatched");
+    }
+
+    @SetEnvironment(executionEnvironments = {ExecutionEnvironment.STANDALONE})
+    @Test(groups = {"wso2.esb"}, description = "Test Last Modified timestamp not set to the local file when sending " +
+            "through VFS Transport Sender")
+    public void testVFSProxyLocalFileWithoutLastModified() throws Exception {
+
+        String proxyName = "VFSProxy26";
+
+        File sourceFile = new File(pathToVfsDir + File.separator + "test.xml");
+        File targetFile = new File(proxyVFSRoots.get(proxyName) + File.separator + "in" + File.separator + "test.xml");
+        File outfile = new File(proxyVFSRoots.get(proxyName) + File.separator + "out" + File.separator + "test.xml");
+
+        FileUtils.copyFile(sourceFile, targetFile);
+        Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+                .until(isFileExist(outfile));
+        Assert.assertTrue(outfile.exists());
+        Assert.assertNotEquals(sourceFile.lastModified(), outfile.lastModified(), "The Last Modified timestamp " +
+                "matched");
+    }
+
+
+    @SetEnvironment(executionEnvironments = {ExecutionEnvironment.STANDALONE})
+    @Test(groups = {"wso2.esb"}, description = "Test transport.vfs.CreateFolder set to false when sending files" +
+            "through VFS Transport Sender")
+    public void testVFSProxyLocalFileWithoutForceCreateFolder() throws Exception {
+
+        String proxyName = "VFSProxy27";
+
+        File sourceFile = new File(pathToVfsDir + File.separator + "test.xml");
+        File targetFile = new File(proxyVFSRoots.get(proxyName) + File.separator + "in" + File.separator + "test.xml");
+        File outfile = new File(proxyVFSRoots.get(proxyName) + File.separator + "out_xml");
+
+        FileUtils.copyFile(sourceFile, targetFile);
+        Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+                .until(isFileExist(outfile));
+        Assert.assertTrue(outfile.exists());
+        Assert.assertEquals(sourceFile.lastModified(), outfile.lastModified(), "The Last Modified timestamp " +
+                "mismatched");
+    }
+
+
     private void addVFSProxy1() throws Exception {
 
         String proxyName = "VFSProxy1";
@@ -1199,6 +1302,120 @@ public class VFSTransportTestCase extends ESBIntegrationTest {
         addProxy(proxy, proxyName);
     }
 
+    private void addVFSProxy25() throws Exception {
+
+        String proxyName = "VFSProxy25";
+        OMElement proxy = AXIOMUtil.stringToOM(
+                "<proxy xmlns=\"http://ws.apache.org/ns/synapse\" name=\"VFSProxy25\" startOnLoad=\"true\" transports=\"vfs jms\">\n"
+                        + "    <target>\n"
+                        + "        <inSequence>\n"
+                        + "            <script language=\"js\">\n"
+                        + "                <![CDATA[ java.lang.Thread.sleep(5000); ]]>\n"
+                        + "            </script>"
+                        + "            <property name=\"OUT_ONLY\" scope=\"default\" type=\"STRING\" value=\"true\"/>\n"
+                        + "            <property expression=\"$trp:FILE_NAME\" name=\"transport.vfs.ReplyFileName\" scope=\"transport\" type=\"STRING\"/>\n"
+                        + "            <call>\n"
+                        + "                <endpoint>\n"
+                        + "                    <address uri=\"vfs:file://" + pathToVfsDir + "test" + File.separator +
+                        proxyName + File.separator + "out-test?transport.vfs.CreateFolder=true\">\n"
+                        + "                        <suspendOnFailure>\n"
+                        + "                            <initialDuration>-1</initialDuration>\n"
+                        + "                            <progressionFactor>1</progressionFactor>\n"
+                        + "                        </suspendOnFailure>\n"
+                        + "                        <markForSuspension>\n"
+                        + "                            <retriesBeforeSuspension>0</retriesBeforeSuspension>\n"
+                        + "                        </markForSuspension>\n"
+                        + "                    </address>\n"
+                        + "                </endpoint>\n"
+                        + "            </call>\n"
+                        + "        </inSequence>\n"
+                        + "        <outSequence/>\n"
+                        + "        <faultSequence/>\n"
+                        + "    </target>\n"
+                        + "    <parameter name=\"transport.PollInterval\">1</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.FileURI\">vfs:file://" + pathToVfsDir + "test" +
+                        File.separator + proxyName + File.separator + "in" + File.separator + "</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.ContentType\">text/xml</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.FileNamePattern\">.*\\.xml</parameter>\n"
+                        + "</proxy>");
+        addProxy(proxy, proxyName);
+    }
+
+    private void addVFSProxy26() throws Exception {
+
+        String proxyName = "VFSProxy26";
+        OMElement proxy = AXIOMUtil.stringToOM(
+                "<proxy xmlns=\"http://ws.apache.org/ns/synapse\" name=\"VFSProxy26\" startOnLoad=\"true\" " +
+                        "transports=\"vfs jms\">\n"
+                        + "    <target>\n"
+                        + "        <inSequence>\n"
+                        + "            <property name=\"OUT_ONLY\" scope=\"default\" type=\"STRING\" value=\"true\"/>\n"
+                        + "            <property expression=\"$trp:FILE_NAME\" name=\"transport.vfs.ReplyFileName\" scope=\"transport\" type=\"STRING\"/>\n"
+                        + "            <call>\n"
+                        + "                <endpoint>\n"
+                        + "                    <address uri=\"vfs:file://" + pathToVfsDir + "test" + File.separator +
+                        proxyName + File.separator + "out?transport.vfs.UpdateLastModified=false&amp;transport.vfs" +
+                        ".CreateFolder=true\">\n"
+                        + "                        <suspendOnFailure>\n"
+                        + "                            <initialDuration>-1</initialDuration>\n"
+                        + "                            <progressionFactor>1</progressionFactor>\n"
+                        + "                        </suspendOnFailure>\n"
+                        + "                        <markForSuspension>\n"
+                        + "                            <retriesBeforeSuspension>0</retriesBeforeSuspension>\n"
+                        + "                        </markForSuspension>\n"
+                        + "                    </address>\n"
+                        + "                </endpoint>\n"
+                        + "            </call>\n"
+                        + "        </inSequence>\n"
+                        + "        <outSequence/>\n"
+                        + "        <faultSequence/>\n"
+                        + "    </target>\n"
+                        + "    <parameter name=\"transport.PollInterval\">1</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.FileURI\">vfs:file://" + pathToVfsDir + "test" +
+                        File.separator + proxyName + File.separator + "in" + File.separator + "</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.ContentType\">text/xml</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.FileNamePattern\">.*\\.xml</parameter>\n"
+                        + "</proxy>");
+        addProxy(proxy, proxyName);
+    }
+
+    private void addVFSProxy27() throws Exception {
+
+        String proxyName = "VFSProxy27";
+        OMElement proxy = AXIOMUtil.stringToOM(
+                "<proxy xmlns=\"http://ws.apache.org/ns/synapse\" name=\"VFSProxy27\" startOnLoad=\"true\" " +
+                        "transports=\"vfs jms\">\n"
+                        + "    <target>\n"
+                        + "        <inSequence>\n"
+                        + "            <property name=\"OUT_ONLY\" scope=\"default\" type=\"STRING\" value=\"true\"/>\n"
+                        + "            <property expression=\"$trp:FILE_NAME\" name=\"transport.vfs.ReplyFileName\" scope=\"transport\" type=\"STRING\"/>\n"
+                        + "            <call>\n"
+                        + "                <endpoint>\n"
+                        + "                    <address uri=\"vfs:file://" + pathToVfsDir + "test" + File.separator +
+                        proxyName + File.separator + "out_xml\">\n"
+                        + "                        <suspendOnFailure>\n"
+                        + "                            <initialDuration>-1</initialDuration>\n"
+                        + "                            <progressionFactor>1</progressionFactor>\n"
+                        + "                        </suspendOnFailure>\n"
+                        + "                        <markForSuspension>\n"
+                        + "                            <retriesBeforeSuspension>0</retriesBeforeSuspension>\n"
+                        + "                        </markForSuspension>\n"
+                        + "                    </address>\n"
+                        + "                </endpoint>\n"
+                        + "            </call>\n"
+                        + "        </inSequence>\n"
+                        + "        <outSequence/>\n"
+                        + "        <faultSequence/>\n"
+                        + "    </target>\n"
+                        + "    <parameter name=\"transport.PollInterval\">1</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.FileURI\">vfs:file://" + pathToVfsDir + "test" +
+                        File.separator + proxyName + File.separator + "in" + File.separator + "</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.ContentType\">text/xml</parameter>\n"
+                        + "    <parameter name=\"transport.vfs.FileNamePattern\">.*\\.xml</parameter>\n"
+                        + "</proxy>");
+        addProxy(proxy, proxyName);
+    }
+
     private void addProxy(OMElement proxy, String proxyName) throws IOException {
         createProxyVfsRootDir(proxyName);
         Utils.deploySynapseConfiguration(proxy, proxyName, Utils.ArtifactType.PROXY, false);
@@ -1225,6 +1442,21 @@ public class VFSTransportTestCase extends ESBIntegrationTest {
 
     private boolean deleteFile(File file) {
         return file.exists() && file.delete();
+    }
+
+    /**
+     * Checks if the deployment of a proxy with the given name is successful.
+     *
+     * @param proxyName The name of the proxy to check.
+     * @return A {@code Callable<Boolean>} that returns {@code true} if the deployment is successful,
+     * {@code false} otherwise.
+     */
+    private Callable<Boolean> isProxyDeploymentSuccessful(String proxyName) {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                return checkProxyServiceExistence(proxyName);
+            }
+        };
     }
 
     private Callable<Boolean> isFileExist(final File file) {

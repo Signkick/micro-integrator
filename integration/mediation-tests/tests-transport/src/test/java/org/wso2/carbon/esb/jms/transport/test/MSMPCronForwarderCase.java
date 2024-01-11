@@ -22,10 +22,13 @@ import org.awaitility.Awaitility;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.wso2.carbon.automation.extensions.servers.jmsserver.controller.config.JMSBrokerConfigurationProvider;
 import org.wso2.carbon.automation.extensions.servers.tomcatserver.TomcatServerManager;
 import org.wso2.carbon.automation.extensions.servers.tomcatserver.TomcatServerType;
 import org.wso2.carbon.automation.test.utils.http.client.HttpRequestUtil;
 import org.wso2.carbon.automation.test.utils.http.client.HttpResponse;
+import org.wso2.carbon.esb.jms.utils.JMSBroker;
+import org.wso2.esb.integration.common.extensions.jmsserver.ActiveMQServerExtension;
 import org.wso2.esb.integration.common.utils.CarbonLogReader;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.services.jaxrs.customersample.CustomerConfig;
@@ -52,6 +55,9 @@ public class MSMPCronForwarderCase extends ESBIntegrationTest {
     protected void init() throws Exception {
         // START THE ESB
         super.init();
+        if (!ActiveMQServerExtension.isMQServerStarted()) {
+            ActiveMQServerExtension.startMQServer();
+        }
         carbonLogReader.start();
     }
 
@@ -78,6 +84,7 @@ public class MSMPCronForwarderCase extends ESBIntegrationTest {
         assertEquals(response4.getResponseCode(), 202, "ESB failed to send 202 even after setting FORCE_SC_ACCEPTED");
 
         // WAIT FOR THE MESSAGE PROCESSOR TO TRIGGER
+        Thread.sleep(60000);
         Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS).until(isLogWritten());
         assertTrue(carbonLogReader.checkForLog("Jack", 60, NUMBER_OF_MESSAGES));
     }

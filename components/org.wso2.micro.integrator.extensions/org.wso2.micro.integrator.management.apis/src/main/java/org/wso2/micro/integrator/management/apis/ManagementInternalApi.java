@@ -59,7 +59,11 @@ import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_TRANSAC
 import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_USERS;
 import static org.wso2.micro.integrator.management.apis.Constants.REST_API_CONTEXT;
 import static org.wso2.micro.integrator.management.apis.Constants.ROOT_CONTEXT;
-
+import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_REGISTRY_RESOURCES;
+import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_REGISTRY_CONTENT;
+import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_REGISTRY_METADATA;
+import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_REGISTRY_PROPERTIES;
+import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_CONFIGS;
 public class ManagementInternalApi implements InternalAPI {
 
     private String name;
@@ -86,6 +90,10 @@ public class ManagementInternalApi implements InternalAPI {
         resourcesList.add(new ApiResourceAdapter(PREFIX_MESSAGE_STORE, new MessageStoreResource()));
         resourcesList.add(new MessageProcessorResource(PREFIX_MESSAGE_PROCESSORS));
         resourcesList.add(new ApiResourceAdapter(PREFIX_LOCAL_ENTRIES, new LocalEntryResource()));
+        resourcesList.add(new ApiResourceAdapter(PREFIX_REGISTRY_RESOURCES , new RegistryResource()));
+        resourcesList.add(new ApiResourceAdapter(PREFIX_REGISTRY_CONTENT , new RegistryContentResource()));
+        resourcesList.add(new ApiResourceAdapter(PREFIX_REGISTRY_PROPERTIES , new RegistryPropertiesResource()));
+        resourcesList.add(new ApiResourceAdapter(PREFIX_REGISTRY_METADATA , new RegistryMetadataResource()));
         resourcesList.add(new ApiResourceAdapter(PREFIX_CONNECTORS, new ConnectorResource()));
         resourcesList.add(new ApiResourceAdapter(PREFIX_LOGIN, new LoginResource()));
         resourcesList.add(new ApiResourceAdapter(PREFIX_USERS + PATH_PARAM_USER, new UserResource()));
@@ -93,13 +101,13 @@ public class ManagementInternalApi implements InternalAPI {
         resourcesList.add(new ApiResourceAdapter(PREFIX_LOGOUT, new LogoutResource()));
         resourcesList.add(new ApiResourceAdapter(PREFIX_SERVER_DATA, new MetaDataResource()));
         resourcesList.add(new LogFilesResource(PREFIX_LOG_FILES));
-        resourcesList.add(new ApiResourceAdapter(PREFIX_TRANSACTION + PATH_PARAM_TRANSACTION,
-                                                 new RequestCountResource()));
+
         resourcesList.add(new ExternalVaultResource(PREFIX_EXTERNAL_VAULTS
                 + PATH_PARAM_EXTERNAL_VAULT_NAME));
         resourcesList.add(new ApiResourceAdapter(PREFIX_DATA_SOURCES, new DataSourceResource()));
         resourcesList.add(new ApiResourceAdapter(PREFIX_ROLES, new RolesResource()));
         resourcesList.add(new ApiResourceAdapter(PREFIX_ROLES + PATH_PARAM_ROLE, new RoleResource()));
+        resourcesList.add(new ApiResourceAdapter(PREFIX_CONFIGS, new ConfigsResource()));
         resources = new APIResource[resourcesList.size()];
         resources = resourcesList.toArray(resources);
     }

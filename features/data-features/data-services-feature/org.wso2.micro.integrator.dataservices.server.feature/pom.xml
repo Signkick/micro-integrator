@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.wso2.ei</groupId>
         <artifactId>data-services-feature</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -80,6 +80,7 @@
                                 <bundleDef>io.netty:netty-handler</bundleDef>
                                 <bundleDef>io.netty:netty-buffer</bundleDef>
                                 <bundleDef>io.netty:netty-transport</bundleDef>
+                                <bundleDef>io.netty:netty-transport-native-unix-common</bundleDef>
                                 <bundleDef>io.netty:netty-codec</bundleDef>
                                 <bundleDef>io.netty:netty-common</bundleDef>
                                 <bundleDef>org.mongodb:mongo-java-driver</bundleDef>

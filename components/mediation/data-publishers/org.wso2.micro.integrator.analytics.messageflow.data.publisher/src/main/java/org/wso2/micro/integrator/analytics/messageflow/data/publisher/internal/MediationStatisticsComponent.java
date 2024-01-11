@@ -20,6 +20,7 @@ package org.wso2.micro.integrator.analytics.messageflow.data.publisher.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -35,8 +36,10 @@ import org.wso2.micro.integrator.analytics.messageflow.data.publisher.observer.A
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.observer.MessageFlowObserver;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.observer.TenantInformation;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.observer.jmx.JMXMediationFlowObserver;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticConstants;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.services.MediationConfigReporterThread;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.services.MessageFlowReporterThread;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.util.MediationDataPublisherConstants;
 import org.wso2.micro.integrator.core.services.Axis2ConfigurationContextService;
 import org.wso2.micro.integrator.core.services.CarbonServerConfigurationService;
 import org.wso2.micro.integrator.initializer.services.SynapseEnvironmentService;
@@ -150,12 +153,20 @@ public class MediationStatisticsComponent {
         }
         String disableAnalyticStr = serverConf
                 .getFirstProperty(AnalyticsDataPublisherConstants.FLOW_STATISTIC_ANALYTICS_PUBLISHING);
+        List<String> publisherTypeList = new ArrayList<>();
         boolean enableAnalyticsPublishing = !Boolean.parseBoolean(disableAnalyticStr);
         if (enableAnalyticsPublishing) {
-            AnalyticsMediationFlowObserver dasObserver = new AnalyticsMediationFlowObserver();
+            String analyticsType = SynapsePropertiesLoader.getPropertyValue(MediationDataPublisherConstants.ANALYTICS_TYPE,
+                    MediationDataPublisherConstants.LOG_PUBLISHER_TYPE);
+            if (analyticsType != null) {
+                for (String publisherType : analyticsType.split(",")) {
+                    publisherTypeList.add(publisherType.trim());
+                }
+            }
+            AnalyticsMediationFlowObserver dasObserver = new AnalyticsMediationFlowObserver(publisherTypeList);
             observerStore.registerObserver(dasObserver);
             dasObserver.setTenantId(tenantId);
-            log.info("DAS mediation statistic publishing enabled for tenant: " + tenantId);
+            log.info(publisherTypeList.toString() + "statistic publishing enabled for tenant: " + tenantId);
         }
         // Engage custom observer implementations (user written extensions)
         String observers = serverConf.getFirstProperty(AnalyticsDataPublisherConstants.STAT_OBSERVERS);
@@ -180,16 +191,19 @@ public class MediationStatisticsComponent {
             log.debug("Registering  Observer for tenant: " + tenantId);
         }
         stores.put(tenantId, observerStore);
-        // Adding configuration reporting thread
-        MediationConfigReporterThread configReporterThread = new MediationConfigReporterThread(synEnvService);
-        configReporterThread.setName("mediation-config-reporter-" + tenantId);
-        configReporterThread.setTenantId(tenantId);
-        configReporterThread.setPublishingAnalyticESB(enableAnalyticsPublishing);
-        configReporterThread.start();
-        if (log.isDebugEnabled()) {
-            log.debug("Registering the new mediation configuration reporter thread");
+
+        if (publisherTypeList.contains(MediationDataPublisherConstants.DATABRIDGE_PUBLISHER_TYPE)) {
+            // Adding configuration reporting thread
+            MediationConfigReporterThread configReporterThread = new MediationConfigReporterThread(synEnvService);
+            configReporterThread.setName("mediation-config-reporter-" + tenantId);
+            configReporterThread.setTenantId(tenantId);
+            configReporterThread.setPublishingAnalyticESB(enableAnalyticsPublishing);
+            configReporterThread.start();
+            if (log.isDebugEnabled()) {
+                log.debug("Registering the new mediation configuration reporter thread");
+            }
+            configReporterThreads.put(tenantId, configReporterThread);
         }
-        configReporterThreads.put(tenantId, configReporterThread);
     }
 
     @Deactivate
@@ -198,7 +212,7 @@ public class MediationStatisticsComponent {
         Set<Map.Entry<Integer, List<MessageFlowReporterThread>>> threadEntriesSet = reporterThreads.entrySet();
         for (Map.Entry<Integer, List<MessageFlowReporterThread>> threadEntryList : threadEntriesSet) {
             List<MessageFlowReporterThread> reporterThreadsList = threadEntryList.getValue();
-            for (MessageFlowReporterThread reporterThread: reporterThreadsList) {
+            for (MessageFlowReporterThread reporterThread : reporterThreadsList) {
                 if (reporterThread != null && reporterThread.isAlive()) {
                     reporterThread.shutdown();
                     // This should wake up the thread if it is asleep

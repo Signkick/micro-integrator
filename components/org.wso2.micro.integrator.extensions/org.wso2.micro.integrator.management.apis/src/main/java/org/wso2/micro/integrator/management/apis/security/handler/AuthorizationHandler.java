@@ -25,6 +25,7 @@ import org.wso2.micro.integrator.management.apis.Constants;
 import org.wso2.micro.integrator.management.apis.ManagementApiUndefinedException;
 import org.wso2.micro.integrator.security.MicroIntegratorSecurityUtils;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;
+import org.wso2.micro.integrator.security.user.core.file.FileBasedUserStoreManager;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
@@ -51,6 +52,7 @@ public class AuthorizationHandler extends AuthorizationHandlerAdapter {
         defaultResources = new ArrayList<>(1);
         defaultResources.add(Constants.PREFIX_USERS);
         defaultResources.add(Constants.PREFIX_ROLES);
+        defaultResources.add(Constants.PREFIX_CONFIGS);
     }
 
     @Override

@@ -76,6 +76,7 @@
                 <exclude>**/release-notes.html</exclude>
                 <exclude>**/carbon.xml</exclude>
                 <exclude>**/plugins/saxon_*.jar</exclude>
+                <exclude>**/plugins/xalan_*.jar</exclude>
                 <exclude>**/lib/endorsed/xalan*.jar</exclude>
                 <exclude>**/conf/tomcat/catalina-server.xml</exclude>
                 <exclude>**/conf/tomcat/webapp-classloading-environments.xml</exclude>
@@ -231,6 +232,7 @@
             <includes>
                 <include>**/tcpmon.sh</include>
                 <include>**/micro-integrator.sh</include>
+                <include>**/extension-runner.sh</include>
             </includes>
             <fileMode>755</fileMode>
         </fileSet>
@@ -318,6 +320,11 @@
             <directory>src/resources/security</directory>
             <outputDirectory>wso2mi-${pom.version}/repository/resources/security</outputDirectory>
             <fileMode>444</fileMode>
+        </fileSet>
+
+        <fileSet> <!-- Create empty registry directory -->
+            <outputDirectory>wso2mi-${pom.version}/registry</outputDirectory>
+            <excludes><exclude>**/*</exclude></excludes>
         </fileSet>
     </fileSets>
 
@@ -503,6 +510,14 @@
         </file>
 
         <file>
+            <source>src/conf/sequence-observers.xml</source>
+            <outputDirectory>wso2mi-${pom.version}/conf</outputDirectory>
+            <destName>sequence-observers.xml</destName>
+            <filtered>true</filtered>
+            <fileMode>644</fileMode>
+        </file>
+
+        <file>
             <source>src/conf/security/cipher-text.properties</source>
             <outputDirectory>wso2mi-${pom.version}/conf/security</outputDirectory>
             <destName>cipher-text.properties</destName>
@@ -640,6 +655,15 @@
                 -->
                 <include>javax.xml.bind:jaxb-api:jar</include>
                 <include>io.netty:netty-tcnative-boringssl-static</include>
+                <!-- need to add this to class path for poi -->
+                <include>org.codehaus.woodstox:stax2-api:jar</include>
+            </includes>
+        </dependencySet>
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>wso2mi-${pom.version}/lib</outputDirectory>
+            <includes>
+                <include>org.wso2.ei:org.wso2.micro.integrator.utils:jar</include>
             </includes>
         </dependencySet>
         <dependencySet>

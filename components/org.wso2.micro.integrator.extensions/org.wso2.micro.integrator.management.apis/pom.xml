@@ -4,7 +4,7 @@
     <parent>
     <groupId>org.wso2.ei</groupId>
     <artifactId>org.wso2.micro.integrator.extensions</artifactId>
-    <version>4.1.0-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -81,6 +81,10 @@
                             org.wso2.micro.integrator.management.apis.*;version="${project.version}"
                         </Export-Package>
                         <Import-Package>
+                            com.nimbusds.jose;version="${nimbus-jose.orbit.imp.pkg.version}",
+                            com.nimbusds.jose.jwk;version="${nimbus-jose.orbit.imp.pkg.version}",
+                            com.nimbusds.jose.crypto;version="${nimbus-jose.orbit.imp.pkg.version}",
+                            com.nimbusds.jwt;version="${nimbus-jose.orbit.imp.pkg.version}",
                             org.osgi.service.cm;version="${version.eclipse.equinox.cm}",
                             org.apache.commons.configuration;version="${commons.configuration.version}",
                             *;resolution:=optional
@@ -124,6 +128,11 @@
                     <classpathDependencyExcludes>
                         <classpathDependencyExclude>org.wso2.org.ops4j.pax.logging</classpathDependencyExclude>
                     </classpathDependencyExcludes>
+                    <argLine>
+                        @{argLine}
+                        -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl
+                        -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl
+                    </argLine>
                 </configuration>
             </plugin>
         </plugins>

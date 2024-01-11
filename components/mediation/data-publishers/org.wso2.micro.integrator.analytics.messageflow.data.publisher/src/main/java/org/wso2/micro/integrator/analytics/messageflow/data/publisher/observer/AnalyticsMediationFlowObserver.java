@@ -20,14 +20,34 @@ package org.wso2.micro.integrator.analytics.messageflow.data.publisher.observer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.ei.EIStatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.StatisticsPublisher;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticStatisticsPublisher;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.util.MediationDataPublisherConstants;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class AnalyticsMediationFlowObserver implements MessageFlowObserver, TenantInformation {
 
     private static final Log log = LogFactory.getLog(AnalyticsMediationFlowObserver.class);
     private int tenantId = -1234;
+    private final Collection<StatisticsPublisher> statPublishers = new ArrayList<>();
 
-    public AnalyticsMediationFlowObserver() {
+    public AnalyticsMediationFlowObserver(List<String> publisherTypes) {
+        if (publisherTypes != null && !publisherTypes.isEmpty() &&
+                (publisherTypes.contains(MediationDataPublisherConstants.DATABRIDGE_PUBLISHER_TYPE )
+                        || publisherTypes.contains(MediationDataPublisherConstants.LOG_PUBLISHER_TYPE))) {
+            if (publisherTypes.contains(MediationDataPublisherConstants.DATABRIDGE_PUBLISHER_TYPE)) {
+                statPublishers.add(EIStatisticsPublisher.GetInstance());
+            }
+            if (publisherTypes.contains(MediationDataPublisherConstants.LOG_PUBLISHER_TYPE)) {
+                statPublishers.add(ElasticStatisticsPublisher.GetInstance());
+            }
+        } else {
+            statPublishers.add(ElasticStatisticsPublisher.GetInstance());
+        }
     }
 
     @Override
@@ -39,11 +59,13 @@ public class AnalyticsMediationFlowObserver implements MessageFlowObserver, Tena
 
     @Override
     public void updateStatistics(PublishingFlow flow) {
-        try {
-            StatisticsPublisher.process(flow, tenantId);
-        } catch (Exception e) {
-            log.error("failed to update statics from DAS publisher", e);
-        }
+        statPublishers.forEach( statisticsPublisher -> {
+            try {
+                statisticsPublisher.process(flow, tenantId);
+            } catch (Exception e) {
+                log.error("failed to update statics from DAS publisher", e);
+            }
+        });
     }
 
     @Override

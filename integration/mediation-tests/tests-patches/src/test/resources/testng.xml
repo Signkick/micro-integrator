@@ -38,6 +38,7 @@
         <classes>
             <class name="org.wso2.carbon.esb.api.test.ESBJAVA3751UriTemplateReservedCharacterEncodingTest"/>
             <class name="org.wso2.carbon.esb.api.test.ESBJAVA4176MethodNotAllowedTest"/>
+            <class name="org.wso2.carbon.esb.api.test.LargeJSONPayloadTest"/>
             <class name="org.wso2.carbon.esb.api.apidefinition.ESBJAVA4907SwaggerGenerationTestCase"/>
             <class name="org.wso2.carbon.esb.api.apidefinition.ESBJAVA4936SwaggerGenerationJsonYamlTestCase"/>
             <class name="org.wso2.carbon.esb.api.apidefinition.CustomSwaggerWithSpecialCharactersTestCase"/>
@@ -64,6 +65,7 @@
             <class name="org.wso2.carbon.esb.mediators.cache.DistributedCachingHeaderSerializationTestcase"/>
             <!--class name="org.wso2.carbon.esb.mediators.cache.ESBJAVA4318Testcase"/-->
             <class name="org.wso2.carbon.esb.mediators.rule.ESBJAVA2506RuleFetchFromRegistryFailsForTheFirstTime"/>
+            <class name="org.wso2.carbon.esb.mediators.script.ScriptMediatorWithImports"/>
         </classes>
     </test>
 
@@ -102,6 +104,7 @@
             <class name="org.wso2.carbon.esb.passthru.transport.test.ForceMessageValidationTestCase" />
             <!--<class name="org.wso2.carbon.esb.passthru.transport.test.ESBJAVA4931PreserveContentTypeHeaderCharSetTestCase"/>-->
             <class name="org.wso2.carbon.esb.passthru.transport.test.PreserveResponseHeaderTestCase"/>
+            <class name="org.wso2.carbon.esb.passthru.transport.test.MalformedHeaderWithCorrelationLogsEnabled"/>
         </classes>
     </test>
 
@@ -126,6 +129,25 @@
             <class name="org.wso2.carbon.esb.vfs.transport.test.ESBJAVA4770VFSPasswordSecurityWithLargekeyTestCase"/>
         </classes>
     </test>
+    <!-- To enable this follow the below steps
+       sudo apt-get install samba cifs-utils
+       Add share in /etc/samba/smb.conf file
+       set samba password for the user using - sudo smbpasswd -a "username"
+       sudo systemctl restart smbd.service
+       Define following properties as env variables
+       export PATH_TO_SMB2_ROOT="root folder defined in etc/samba/smb.conf file "
+       export SMB2_PASSWORD="the samba password used above"
+       export SMB2_USER="user which owns the root directory"
+       export PASSWORD="the user password"
+       -->
+    <!--test name="VFS SMB2 tests" preserve-order="true" verbose="2">
+           <packages>
+               <package name="org.wso2.carbon.esb.vfs.transport.test.connection.failure"/>
+           </packages>
+    </test-->
+
+
+
     <!-- Commented the test case due to a regression issue occurred due to this fix.
              Need to enable this test case once the original issue is fixed properly -->
     <!--test
@@ -143,6 +165,7 @@
             <class name="org.wso2.carbon.esb.car.deployment.test.ESBJAVA3546CAppProxyOnLoadTestCase"/>
             <class name="org.wso2.carbon.esb.car.deployment.test.ESBJAVA4116CAppArtifactDeploymentFailureDueToNameTestCase"/>
             <class name="org.wso2.carbon.esb.car.deployment.test.CARBON16113DeployArtifactsBeforeTransportStarsTestCase"/>
+            <class name="org.wso2.carbon.esb.car.deployment.test.FaultyCAppSwaggerRemovalTestCase"></class>
         </classes>
     </test>
 
@@ -161,6 +184,7 @@
             <class name="org.wso2.carbon.esb.registry.task.ESBJAVA4565TestCase"/>
             <class name="org.wso2.carbon.esb.header.preserve.ESBJAVA4631PreserveContentTypeHeaderTestCase"/>
             <class name="org.wso2.carbon.esb.getprocessor.test.FaviconTest"/>
+            <class name="org.wso2.carbon.esb.healthcheck.HealthCheckTestCase"/>
         </classes>
     </test>
 

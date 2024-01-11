@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.wso2.ei</groupId>
         <artifactId>mediation-integration</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -54,7 +54,7 @@
                 <version>2.12.4</version>
                 <inherited>false</inherited>
                 <configuration>
-                    <argLine>-Xms512m -Xmx1024m -XX:MaxPermSize=128m</argLine>
+                    <argLine>-Xms512m -Xmx1024m </argLine>
                     <disableXmlReport>false</disableXmlReport>
                     <parallel>false</parallel>
                     <skipTests>${skipTests}</skipTests>
@@ -137,7 +137,7 @@
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${basedir}/target/tobeCopied/</outputDirectory>
-                                    <includes>**/*.jks</includes>
+                                    <includes>**/*.jks,**/*.mar</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -184,6 +184,27 @@
                                     </directory>
                                     <includes>
                                         <include>**/*.jks</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-addressing-client-module</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/src/test/resources/client/modules
+                            </outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${basedir}/target/tobeCopied/wso2mi-${project.version}/repository/deployment/client/modules/
+                                    </directory>
+                                    <includes>
+                                        <include>**/*.mar</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -299,6 +320,10 @@
         <dependency>
             <groupId>com.oracle.jdbc</groupId>
             <artifactId>ojdbc8</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
         </dependency>
         <dependency>
             <groupId>com.ibm.db2</groupId>

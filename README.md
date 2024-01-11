@@ -58,7 +58,7 @@ Please follow the steps below to build WSO2 Micro Integrator from the source cod
 2. Run the maven command `mvn clean install` from the root directory of the repository.
 3. The generated Micro Integrator distribution can be found at `micro-integrator/distribution/target/wso2mi-<version>.zip`.
 
-Please note that the product can be build using only JDK 8 but the integration tests can be run in either JDK 8 or 11.
+Please note that the product can be build using only JDK 11 but the integration tests can be run in either JDK 11 or 17.
 
 #### Building the Docker image
 
@@ -72,6 +72,14 @@ mvn clean install -Ddocker.skip=false
 ## License
 
 WSO2 Micro Integrator is licensed under the [Apache License](http://www.apache.org/licenses/LICENSE-2.0).
+
+## Survey On Open Source Community Communication
+
+WSO2 wants to learn more about our open source software (OSS) community and your communication preferences to serve you better.
+
+In addition, we may reach out to a small number of respondents to ask additional questions and offer a small gift.
+
+Link to survey: https://forms.gle/h5q4M3K7vyXba3bK6
 
 ## Copyright
 

@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.wso2.ei</groupId>
         <artifactId>micro-integrator-features</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -142,7 +142,7 @@
                                 <bundleDef>org.wso2.securevault:org.wso2.securevault:${securevault.version}</bundleDef>
 <!--                                <bundleDef>org.wso2.orbit.com.h2database:h2:${version.h2.engine}</bundleDef>-->
                                 <bundleDef>org.apache.axis2.wso2:axis2-json:${axis2.wso2.version}</bundleDef>
-                                <bundleDef>org.codehaus.jettison.wso2:jettison:${orbit.version.jettison}</bundleDef>
+                                <bundleDef>org.codehaus.jettison:jettison:${version.jettison}</bundleDef>
 <!--                                <bundleDef>commons-pool.wso2:commons-pool:${orbit.version.commons.pool}</bundleDef>-->
 <!--                                <bundleDef>commons-dbcp.wso2:commons-dbcp:${orbit.version.commons.dbcp}</bundleDef>-->
 <!--                                <bundleDef>org.apache.abdera.wso2:abdera:${orbit.version.abdera}</bundleDef>-->
@@ -276,15 +276,14 @@
                                 <bundleDef>commons-configuration:commons-configuration:${commons.configuration.version}</bundleDef>
                                 <!-- bundles needed to swagger for DSS feature -->
                                 <bundleDef>org.wso2.orbit.io.swagger.v3:swagger-parser:${swagger.parser.orbit.version}</bundleDef>
-                                <bundleDef>io.swagger:swagger-core:${swagger.core.v2.version}</bundleDef>
-                                <bundleDef>io.swagger:swagger-models:${swagger.core.v2.version}</bundleDef>
-                                <bundleDef>io.swagger:swagger-annotations:${swagger.core.v2.version}</bundleDef>
                                 <bundleDef>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${fasterxml.jackson.version}</bundleDef>
                                 <bundleDef>javax.validation:validation-api:${javax.validation.version}</bundleDef>
                                 <bundleDef>org.yaml:snakeyaml:${snakeyaml.version}</bundleDef>
                                 <bundleDef>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${fasterxml.jackson.version}</bundleDef>
-                                <bundleDef>org.wso2.orbit.org.apache.commons:commons-lang3:${commons.lang3.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.apache.commons:commons-lang3:${commons-lang3.orbit.version}</bundleDef>
                                 <bundleDef>org.wso2.ei:javax.cache.wso2:${project.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.io.grpc:grpc-context:${grpc-context.orbit.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.io.opencensus:opencensus:${opencensus.orbit.version}</bundleDef>
                             </bundles>
 
                             <importFeatures>

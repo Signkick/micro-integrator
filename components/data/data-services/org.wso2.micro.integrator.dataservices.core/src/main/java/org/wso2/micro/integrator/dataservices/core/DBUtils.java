@@ -603,7 +603,9 @@ public class DBUtils {
             OMElement e = (OMElement) regEntry;
             resolvedValue = e.toString();
         } else if (regEntry instanceof OMText) {
-            resolvedValue = ((OMText) regEntry).getText();
+            String rawValue = ((OMText) regEntry).getText();
+            byte[] decodedBytes = Base64.decodeBase64(rawValue.getBytes(StandardCharsets.UTF_8));
+            resolvedValue = new String(decodedBytes, StandardCharsets.UTF_8);
         } else if (regEntry instanceof String) {
             resolvedValue = (String) regEntry;
         }
@@ -703,9 +705,16 @@ public class DBUtils {
      * Create a Time object from the given time string.
      */
     public static Time getTime(String value) throws DataServiceFault, ParseException {
-        if (value == null || value.isEmpty()){
+        if (value == null || value.isEmpty()) {
             throw new DataServiceFault("Empty string or null value was found as time.");
         }
+
+        // ConverterUtil.convertToTime function requires hh:mm:ss type. However, OData version 4.8.0 returns
+        // hh:mm for hh:mm:00 and following if block is needed to handle that issue
+        if (value.length() == 5) {
+            value += ":00";
+        }
+
         return new Time(ConverterUtil.convertToTime(value).getAsCalendar().getTimeInMillis());
     }
 

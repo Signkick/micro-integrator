@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
 import static org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME;
@@ -121,7 +120,7 @@ public class CappDeployer extends AbstractDeployer {
         if (ServiceCatalogUtils.isServiceCatalogEnabled()) {
             serviceCatalogConfiguration = ServiceCatalogUtils.readConfiguration(secretCallbackHandlerService);
             serviceCatalogExecutor = Executors.newFixedThreadPool(
-                    ServiceCatalogUtils.getExecutorThreadCount(serviceCatalogConfiguration, 10));
+                    ServiceCatalogUtils.getExecutorThreadCount(serviceCatalogConfiguration, 1));
         }
     }
 
@@ -217,6 +216,8 @@ public class CappDeployer extends AbstractDeployer {
             log.error("Error occurred while deploying the Carbon application: " + cAppName
                       + ". Reverting successfully deployed artifacts in the CApp.", e);
             undeployCarbonApp(currentApp, axisConfig);
+            // Validate synapse config to remove half added swagger definitions in the case of a faulty CAPP.
+            SynapseConfigUtils.getSynapseConfiguration(SUPER_TENANT_DOMAIN_NAME).validateSwaggerTable();
             faultyCAppObjects.add(currentApp);
             faultyCapps.add(cAppName);
         }
@@ -278,6 +279,10 @@ public class CappDeployer extends AbstractDeployer {
         if (appVersion != null && !("").equals(appVersion)) {
             carbonApplication.setAppVersion(appVersion);
         }
+        String mainSeq = appConfig.getMainSequence();
+        if (mainSeq != null && !("").equals(mainSeq)) {
+            carbonApplication.setMainSequence(mainSeq);
+        }
         return carbonApplication;
     }
 
@@ -338,6 +343,15 @@ public class CappDeployer extends AbstractDeployer {
      */
     public static List<CarbonApplication> getCarbonApps() {
         return Collections.unmodifiableList(cAppMap);
+    }
+
+    public static CarbonApplication getCarbonAppByName(String cAppName) {
+        for (CarbonApplication capp : cAppMap) {
+            if (cAppName.equals(capp.getAppName())) {
+                return capp;
+            }
+        }
+        return null;
     }
 
     /**

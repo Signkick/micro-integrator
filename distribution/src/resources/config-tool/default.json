@@ -8,6 +8,36 @@
   "server.hide_admin_service_wsdl": true,
   "server.roles": ["EnterpriseIntegrator", "EnterpriseServiceBus", "DataServicesServer"],
   "server.enable_security_deployment_interceptor": true,
+  "server.cache_attachments": false,
+  "server.attachment_dir": "work/mtom",
+  "server.size_threshold": "4000",
+  "server.disable_rest": false,
+  "server.sandesha2_storage_manager": "inmemory",
+  "server.service_path": "services",
+  "server.strict_service_path_validation": false,
+  "server.services_directory": "axis2services",
+  "server.modules_directory": "axis2modules",
+  "server.send_stacktrace_details_with_faults": false,
+  "server.drill_down_to_root_cause_for_fault_reason": false,
+  "server.manage_transport_session": true,
+  "server.config_context_timeout_interval": "30000",
+  "server.synapse_config_home_directory": ".",
+  "server.synapse_config_resolve_root": ".",
+  "server.synapse_config_server_name": "localhost",
+  "server.enable_basic_auth": true,
+
+  "server.blocking.enableMTOM": false,
+  "server.blocking.enableSwA": false,
+  "server.blocking.hot_deployment": true,
+  "server.blocking.hot_update": false,
+  "server.blocking.config_context_timeout_interval": "30000",
+  "server.blocking.send_stacktrace_details_with_faults": false,
+  "server.blocking.drill_down_to_root_cause_for_fault_reason": false,
+  "server.blocking.username": "admin",
+  "server.blocking.password": "axis2",
+  "server.blocking.service_path": "services",
+  "server.blocking.rest_path": "rest",
+  "server.blocking.disable_rest": false,
 
   "encryption.internal_crypto_provider": "org.wso2.micro.integrator.crypto.provider.KeyStoreBasedInternalCryptoProvider",
   "encryption.key": "SECRET_KEY",
@@ -55,6 +85,16 @@
   "synapse_properties.'opentelemetry.port'":  "14250",
   "synapse_properties.'opentelemetry.class'": "org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.JaegerTelemetryManager",
 
+  "synapse_properties.'analytics.enabled'": false,
+  "synapse_properties.'analytics.publisher'": "log",
+  "synapse_properties.'analytics.prefix'": "SYNAPSE_ANALYTICS_DATA",
+  "synapse_properties.'analytics.id'": "$ref{server.hostname}",
+  "synapse_properties.'analytics.api_analytics.enabled'": true,
+  "synapse_properties.'analytics.proxy_service_analytics.enabled'": true,
+  "synapse_properties.'analytics.sequence_analytics.enabled'": true,
+  "synapse_properties.'analytics.endpoint_analytics.enabled'": true,
+  "synapse_properties.'analytics.inbound_endpoint_analytics.enabled'": true,
+
   "passthru_properties.'http.socket.timeout'": "180000",
   "passthru_properties.'worker_pool_size_core'": "400",
   "passthru_properties.'worker_pool_size_max'": "400",
@@ -98,6 +138,20 @@
   "transport.http.sender.truststore.type": "$ref{truststore.type}",
   "transport.http.sender.truststore.password": "$ref{truststore.password}",
   "transport.http.sender.ssl_profile.read_interval": "600000",
+
+  "transport.client.default_max_connection_per_host": "500",
+  "transport.client.max_total_connections":"15000",
+  "transport.client.http_content_negotiation": false,
+  "transport.client.send_stacktrace_details_with_fault":true,
+  "transport.client.drilldown_to_root_cause_for_fault_reason": false,
+  "transport.client.http.properties.PROTOCOL": "HTTP/1.1",
+  "transport.client.http.properties.Transfer-Encoding": "chunked",
+  "transport.client.http.properties.SO_TIMEOUT": "60000",
+  "transport.client.http.properties.CONNECTION_TIMEOUT": "60000",
+  "transport.client.https.properties.PROTOCOL": "HTTP/1.1",
+  "transport.client.https.properties.Transfer-Encoding": "chunked",
+  "transport.client.https.properties.SO_TIMEOUT": "60000",
+  "transport.client.https.properties.CONNECTION_TIMEOUT": "60000",
 
   "transport.netty.http.sender.enable": true,
   "transport.netty.http.sender.class": "org.apache.synapse.transport.netty.sender.Axis2HttpTransportSender",
@@ -359,6 +413,151 @@
       ]
     }
   ],
+  "transport.blocking.phase_order": [
+    {
+      "phase_type": "InFlow",
+      "phases": [
+        {
+          "phase_name": "Transport",
+          "handlers": [
+            {
+              "handler_name": "IntegratorStatefulHandler",
+              "handler_class": "org.wso2.micro.integrator.core.handlers.IntegratorStatefulHandler",
+              "handler_order_phase": "Transport"
+            }, {
+              "handler_name": "SOAPActionBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.SOAPActionBasedDispatcher",
+              "handler_order_phase": "Transport"
+            }
+
+          ]
+        }, {
+          "phase_name": "Addressing",
+          "handlers": [
+            {
+              "handler_name": "AddressingBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.AddressingBasedDispatcher",
+              "handler_order_phase": "Addressing"
+            }
+
+          ]
+        }, {
+          "phase_name": "Security"
+        }, {
+          "phase_name": "PreDispatch"
+        }, {
+          "phase_name": "Dispatch",
+          "phase_class": "org.apache.axis2.engine.DispatchPhase",
+          "handlers": [
+            {
+              "handler_name": "IntegratorStatefulHandler",
+              "handler_class": "org.wso2.micro.integrator.core.handlers.IntegratorStatefulHandler"
+            }, {
+              "handler_name": "SOAPActionBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.SOAPActionBasedDispatcher"
+            }, {
+              "handler_name": "RequestURIOperationDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.RequestURIOperationDispatcher"
+            }, {
+              "handler_name": "SOAPMessageBodyBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.SOAPMessageBodyBasedDispatcher"
+            }, {
+              "handler_name": "HTTPLocationBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.HTTPLocationBasedDispatcher"
+            }
+
+          ]
+        }, {
+          "phase_name": "RMPhase"
+        }, {
+          "phase_name": "OperationInPhase"
+        }, {
+          "phase_name": "soapmonitorPhase"
+        }
+
+      ]
+    }, {
+      "phase_type": "OutFlow",
+      "phases": [
+        {
+          "phase_name": "soapmonitorPhase"
+        }, {
+          "phase_name": "OperationOutPhase"
+        }, {
+          "phase_name": "RMPhase"
+        }, {
+          "phase_name": "PolicyDetermination"
+        }, {
+          "phase_name": "MessageOut"
+        }, {
+          "phase_name": "Security"
+        }
+      ]
+    }, {
+      "phase_type": "InFaultFlow",
+      "phases": [
+        {
+          "phase_name": "Addressing",
+          "handlers": [
+            {
+              "handler_name": "AddressingBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.AddressingBasedDispatcher",
+              "handler_order_phase": "Addressing"
+            }
+
+          ]
+        }, {
+          "phase_name": "Security"
+        }, {
+          "phase_name": "PreDispatch"
+        }, {
+          "phase_name": "Dispatch",
+          "phase_class": "org.apache.axis2.engine.DispatchPhase",
+          "handlers": [
+            {
+              "handler_name": "IntegratorStatefulHandler",
+              "handler_class": "org.wso2.micro.integrator.core.handlers.IntegratorStatefulHandler"
+            }, {
+              "handler_name": "SOAPActionBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.SOAPActionBasedDispatcher"
+            }, {
+              "handler_name": "RequestURIOperationDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.RequestURIOperationDispatcher"
+            }, {
+              "handler_name": "SOAPMessageBodyBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.SOAPMessageBodyBasedDispatcher"
+            }, {
+              "handler_name": "HTTPLocationBasedDispatcher",
+              "handler_class": "org.apache.axis2.dispatchers.HTTPLocationBasedDispatcher"
+            }
+          ]
+        }, {
+          "phase_name": "RMPhase"
+        },{
+          "phase_name": "OperationInFaultPhase"
+        },{
+          "phase_name": "soapmonitorPhase"
+        }
+      ]
+    }, {
+      "phase_type": "OutFaultFlow",
+      "phases": [
+        {
+          "phase_name": "soapmonitorPhase"
+        }, {
+          "phase_name": "OperationOutFaultPhase"
+        }, {
+          "phase_name": "RMPhase"
+        }, {
+          "phase_name": "PolicyDetermination"
+        }, {
+          "phase_name": "MessageOut"
+        }, {
+          "phase_name": "Security"
+        }
+      ]
+    }
+  ],
 
   "message_formatters.form_urlencoded": "org.apache.synapse.commons.formatters.XFormURLEncodedFormatter",
   "message_formatters.multipart_form_data": "org.apache.axis2.transport.http.MultipartFormDataFormatter",
@@ -442,7 +641,7 @@
   "prometheus_api.authorization_handler.enable": false,
 
   "readiness_probe.protocols": "http",
-
+  "liveness_probe.protocols": "http",
   "management_api.protocols": "https http",
   "management_api.jwt_token_security_handler.enable": "true",
   "management_api.jwt_token_security_handler.token_store_config.max_size": "200",
@@ -482,6 +681,9 @@
     "cache_delay": "2"
   },
 
-  "user_store.base_dn": "dc=wso2,dc=org"
+  "user_store.base_dn": "dc=wso2,dc=org",
+
+  "transport.jms.sender_class": "org.apache.axis2.transport.jms.JMSSender",
+  "transport.jms.listener_class": "org.apache.axis2.transport.jms.JMSListener"
 
 }
